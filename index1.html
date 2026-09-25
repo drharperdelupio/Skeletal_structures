@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Drawing Chemical Structures Practice</title>
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; line-height: 1.5; margin: 0; padding: 1.25rem; color: #1f1f1f; background: #fff; }
+  main { max-width: 820px; margin: 0 auto; }
+  h1 { margin-top: 0; }
+  h2 { border-bottom: 2px solid #333; padding-bottom: .3rem; margin-top: 2.5rem; }
+  .intro { background: #f4f4f4; border-left: 5px solid #333; padding: .9rem 1.1rem; margin: 1rem 0; }
+  .problem { border: 1px solid #999; border-radius: 6px; padding: 1rem 1.2rem; margin: 1.2rem 0; }
+  .problem.done { border-color: #2e7d32; background: #f4faf4; }
+  .problem h3 { margin-top: 0; }
+  .choices button { margin: .25rem .4rem .25rem 0; padding: .45rem .8rem; font-size: 1rem; cursor: pointer; border: 1px solid #555; border-radius: 4px; background: #fff; }
+  .choices button:hover { background: #eee; }
+  .choices button.correct { background: #c8e6c9; border-color: #2e7d32; }
+  .choices button.incorrect { background: #ffcdd2; border-color: #c62828; }
+  .feedback { margin-top: .6rem; font-weight: bold; min-height: 1.4em; }
+  .feedback.correct-text { color: #2e7d32; }
+  .feedback.incorrect-text { color: #c62828; }
+  .explanation { margin-top: .3rem; font-weight: normal; font-style: italic; color: #333; }
+  svg.diagram { display: block; margin: .6rem 0; background: #fafafa; border: 1px solid #ddd; }
+  .formula { font-size: 1.15rem; margin: .4rem 0 .8rem 0; }
+  #jsme_container { width: 380px; height: 340px; border: 1px solid #999; margin: .6rem 0; }
+  .controls button { padding: .5rem 1rem; font-size: 1rem; margin-right: .5rem; cursor: pointer; }
+  #part2-nav { margin-top: .8rem; }
+  .progress { font-weight: bold; margin-top: 2.5rem; padding: .8rem; background: #f0f0f0; border-radius: 6px; }
+  .setup-note { font-size: .9rem; color: #555; border: 1px dashed #aaa; padding: .6rem .9rem; margin-top: 1.5rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Drawing Chemical Structures — Practice</h1>
+  <div class="intro">
+    <p>Two parts, both with instant feedback:</p>
+    <ol>
+      <li><strong>Part 1 — Complete the Octet:</strong> for a highlighted carbon, decide how many hydrogen atoms must be added to give it four total bonds.</li>
+      <li><strong>Part 2 — Draw the Skeletal Structure:</strong> given a condensed structural formula, draw the corresponding line (skeletal) structure.</li>
+    </ol>
+    <p>This does not save your progress if you leave the page or refresh — complete it in one sitting.</p>
+  </div>
+
+  <h2>Part 1 — Complete the Octet</h2>
+  <p>Each carbon skeleton below shows the bonds already drawn. Click the number of hydrogen atoms that must be added to the <strong>highlighted carbon</strong> to give it four total bonds.</p>
+  <div id="part1"></div>
+
+  <h2>Part 2 — Draw the Skeletal Structure</h2>
+  <p>Draw the skeletal (line) structure that matches the condensed structural formula shown, then click <strong>Check My Structure</strong>.</p>
+  <div id="part2-formula" class="formula"></div>
+  <div id="jsme_container"></div>
+  <div class="controls">
+    <button id="check-btn">Check My Structure</button>
+    <button id="clear-btn">Clear</button>
+    <button id="reveal-btn" style="display:none;">Show Correct Structure</button>
+  </div>
+  <div id="part2-feedback" class="feedback"></div>
+  <div id="part2-nav">
+    <button id="prev-btn">&larr; Previous</button>
+    <span id="part2-counter"></span>
+    <button id="next-btn">Next &rarr;</button>
+  </div>
+
+  <div class="progress" id="progress-summary">Part 1: 0 / 6 correct &nbsp;|&nbsp; Part 2: 0 / 6 correct</div>
+
+  <div class="setup-note">
+    <strong>Instructor setup note (delete before publishing to students):</strong> this page loads the JSME molecule editor from a local <code>jsme/</code> folder that must sit next to this file (download the current JSME distribution from jsme-editor.github.io and unzip it into a folder named <code>jsme</code> here), and loads RDKit.js from a public CDN for structure checking. Test both the octet-completion buttons and the drawing/check flow after uploading to GitHub Pages, since neither could be live-tested before delivery.
+  </div>
+</main>
+
+<!-- JSME molecule editor: place the unzipped JSME distribution in a "jsme" folder next to this file -->
+<script type="text/javascript" src="jsme/jsme.nocache.js"></script>
+<!-- RDKit.js (structure comparison) -->
+<script src="https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js"></script>
+
+<script>
+/* ---------------- Part 1: Complete the Octet ---------------- */
+
+// Each problem: an SVG diagram (already-drawn bonds only, no H's shown),
+// the highlighted ("?") carbon's already-drawn bond count expressed as
+// correctH = 4 - bonds already drawn to that carbon.
+const part1Problems = [
+  {
+    correctH: 3,
+    explanation: "One C-C bond is already drawn (1 bond). 4 - 1 = 3 hydrogens needed.",
+    svg: `<svg class="diagram" viewBox="0 0 260 100" width="260" height="100">
+      <line x1="70" y1="50" x2="160" y2="50" stroke="#333" stroke-width="2"/>
+      <circle cx="70" cy="50" r="18" fill="#fff" stroke="#c62828" stroke-width="2" stroke-dasharray="4,3"/>
+      <text x="70" y="55" text-anchor="middle" font-size="16" font-weight="bold">C?</text>
+      <circle cx="160" cy="50" r="16" fill="#fff" stroke="#333" stroke-width="1.5"/>
+      <text x="160" y="55" text-anchor="middle" font-size="16">C</text>
+    </svg>`
+  },
+  {
+    correctH: 2,
+    explanation: "Two C-C bonds are already drawn to the middle carbon (2 bonds). 4 - 2 = 2 hydrogens needed.",
+    svg: `<svg class="diagram" viewBox="0 0 280 100" width="280" height="100">
+      <line x1="60" y1="50" x2="140" y2="50" stroke="#333" stroke-width="2"/>
+      <line x1="140" y1="50" x2="220" y2="50" stroke="#333" stroke-width="2"/>
+      <circle cx="60" cy="50" r="16" fill="#fff" stroke="#333" stroke-width="1.5"/>
+      <text x="60" y="55" text-anchor="middle" font-size="16">C</text>
+      <circle cx="140" cy="50" r="18" fill="#fff" stroke="#c62828" stroke-width="2" stroke-dasharray="4,3"/>
+      <text x="140" y="55" text-anchor="middle" font-size="16" font-weight="bold">C?</text>
+      <circle cx="220" cy="50" r="16" fill="#fff" stroke="#333" stroke-width="1.5"/>
+      <text x="220" y="55" text-anchor="middle" font-size="16">C</text>
+    </svg>`
+  },
+  {
+    correctH: 1,
+    explanation: "Three C-C bonds are already drawn to the central carbon (3 bonds). 4 - 3 = 1 hydrogen needed.",
+    svg: `<svg class="diagram" viewBox="0 0 260 160" width="260" height="160">
+      <line x1="130" y1="80" x2="60" y2="30" stroke="#333" stroke-width="2"/>
+      <line x1="130" y1="80" x2="200" y2="30" stroke="#333" stroke-width="2"/>
+      <line x1="130" y1="80" x2="130" y2="140" stroke="#333" stroke-width="2"/>
+      <circle cx="130" cy="80" r="18" fill="#fff" stroke="#c62828" stroke-width="2" stroke-dasharray="4,3"/>
+      <text x="130" y="85" text-anchor="middle" font-size="16" font-weight="bold">C?</text>
+      <circle cx="60" cy="30" r="16" fill="#fff" stroke="#333" stroke-width="1.5"/>
+      <text x="60" y="35" text-anchor="middle" font-size="16">C</text>
+      <circle cx="200" cy="30" r="16" fill="#fff" stroke="#333" stroke-width="1.5"/>
+      <text x="200" y="35" text-anchor="middle" font-size="16">C</text>
+      <circle cx="130" cy="140" r="16" fill="#fff" stroke="#333" stroke-width="1.5"/>
+      <text x="130" y="145" text-anchor="middle" font-size="16">C</text>
+    </svg>`
+  },
+  {
+    correctH: 0,
+    explanation: "Four C-C bonds are already drawn to the central carbon (4 bonds). 4 - 4 = 0 hydrogens needed.",
+    svg: `<svg class="diagram" viewBox="0 0 260 200" width="260" height="200">
+      <line x1="130" y1="100" x2="60" y2="50" stroke="#333" stroke-width="2"/>
+      <line x1="130" y1="100" x2="200" y2="50" stroke="#333" stroke-width="2"/>
+      <line x1="130" y1="100" x2="60" y2="150" stroke="#333" stroke-width="2"/>
+      <line x1="130" y1="100" x2="200" y2="150" stroke="#333" stroke-width="2"/>
+      <circle cx="130" cy="100" r="18" fill="#fff" stroke="#c62828" stroke-width="2" stroke-dasharray="4,3"/>
+      <text x="130" y="105" text-anchor="middle" font-size="16" font-weight="bold">C?</text>
+      <circle cx="60" cy="50" r="16" fill="#fff" stroke="#333" stroke-width="1.5"/>
+      <text x="60" y="55" text-anchor="middle" font-size="16">C</text>
+      <circle cx="200" cy="50" r="16" fill="#fff" stroke="#333" stroke-width="1.5"/>
+      <text x="200" y="55" text-anchor="middle" font-size="16">C</text>
+      <circle cx="60" cy="150" r="16" fill="#fff" stroke="#333" stroke-width="1.5"/>
+      <text x="60" y="155" text-anchor="middle" font-size="16">C</text>
+      <circle cx="200" cy="150" r="16" fill="#fff" stroke="#333" stroke-width="1.5"/>
+      <text x="200" y="155" text-anchor="middle" font-size="16">C</text>
+    </svg>`
+  },
+  {
+    correctH: 1,
+    explanation: "A double bond counts as 2 bonds, plus the single bond to the other carbon makes 3 bonds total. 4 - 3 = 1 hydrogen needed. This is the kind of carbon you'd expect to be sp2 hybridized.",
+    svg: `<svg class="diagram" viewBox="0 0 280 100" width="280" height="100">
+      <line x1="60" y1="50" x2="140" y2="50" stroke="#333" stroke-width="2"/>
+      <line x1="140" y1="46" x2="220" y2="46" stroke="#333" stroke-width="2"/>
+      <line x1="140" y1="54" x2="220" y2="54" stroke="#333" stroke-width="2"/>
+      <circle cx="140" cy="50" r="18" fill="#fff" stroke="#c62828" stroke-width="2" stroke-dasharray="4,3"/>
+      <text x="140" y="55" text-anchor="middle" font-size="16" font-weight="bold">C?</text>
+      <circle cx="60" cy="50" r="16" fill="#fff" stroke="#333" stroke-width="1.5"/>
+      <text x="60" y="55" text-anchor="middle" font-size="16">C</text>
+      <circle cx="220" cy="50" r="16" fill="#fff" stroke="#333" stroke-width="1.5"/>
+      <text x="220" y="55" text-anchor="middle" font-size="16">C</text>
+    </svg>`
+  },
+  {
+    correctH: 1,
+    explanation: "A triple bond counts as 3 bonds. 4 - 3 = 1 hydrogen needed. This is the kind of carbon you'd expect to be sp hybridized.",
+    svg: `<svg class="diagram" viewBox="0 0 260 100" width="260" height="100">
+      <line x1="70" y1="44" x2="160" y2="44" stroke="#333" stroke-width="2"/>
+      <line x1="70" y1="50" x2="160" y2="50" stroke="#333" stroke-width="2"/>
+      <line x1="70" y1="56" x2="160" y2="56" stroke="#333" stroke-width="2"/>
+      <circle cx="70" cy="50" r="18" fill="#fff" stroke="#c62828" stroke-width="2" stroke-dasharray="4,3"/>
+      <text x="70" y="55" text-anchor="middle" font-size="16" font-weight="bold">C?</text>
+      <circle cx="160" cy="50" r="16" fill="#fff" stroke="#333" stroke-width="1.5"/>
+      <text x="160" y="55" text-anchor="middle" font-size="16">C</text>
+    </svg>`
+  }
+];
+
+let part1CorrectCount = 0;
+
+function renderPart1() {
+  const container = document.getElementById("part1");
+  part1Problems.forEach((p, i) => {
+    const div = document.createElement("div");
+    div.className = "problem";
+    div.id = "p1-" + i;
+    div.innerHTML = `
+      <h3>Problem ${i + 1}</h3>
+      ${p.svg}
+      <div class="choices">
+        ${[0,1,2,3,4].map(n => `<button data-n="${n}">${n}</button>`).join("")}
+      </div>
+      <div class="feedback" id="p1-fb-${i}"></div>
+    `;
+    container.appendChild(div);
+    div.querySelectorAll(".choices button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        if (div.classList.contains("done")) return; // already answered correctly
+        const chosen = parseInt(btn.getAttribute("data-n"), 10);
+        const fb = document.getElementById("p1-fb-" + i);
+        if (chosen === p.correctH) {
+          btn.classList.add("correct");
+          fb.className = "feedback correct-text";
+          fb.innerHTML = "Correct! " + `<span class="explanation">${p.explanation}</span>`;
+          div.classList.add("done");
+          part1CorrectCount++;
+          updateProgress();
+        } else {
+          btn.classList.add("incorrect");
+          fb.className = "feedback incorrect-text";
+          fb.textContent = "Not quite — try another number.";
+        }
+      });
+    });
+  });
+}
+
+/* ---------------- Part 2: Draw the Skeletal Structure ---------------- */
+
+const part2Problems = [
+  { label: "Ethane", formula: "CH<sub>3</sub>CH<sub>3</sub>", targetSmiles: "CC" },
+  { label: "Propane", formula: "CH<sub>3</sub>CH<sub>2</sub>CH<sub>3</sub>", targetSmiles: "CCC" },
+  { label: "2-methylpropane (isobutane)", formula: "(CH<sub>3</sub>)<sub>3</sub>CH", targetSmiles: "CC(C)C" },
+  { label: "Ethanol", formula: "CH<sub>3</sub>CH<sub>2</sub>OH", targetSmiles: "CCO" },
+  { label: "Ethene", formula: "CH<sub>2</sub>=CH<sub>2</sub>", targetSmiles: "C=C" },
+  { label: "Acetylene (ethyne)", formula: "HC&equiv;CH", targetSmiles: "C#C" }
+];
+
+let part2Index = 0;
+let part2CorrectCount = 0;
+let part2Solved = new Array(part2Problems.length).fill(false);
+let part2Attempts = new Array(part2Problems.length).fill(0);
+let jsmeApplet = null;
+let RDKitReady = null;
+
+function jsmeOnLoad() {
+  jsmeApplet = new JSApplet.JSME("jsme_container", "380px", "340px");
+  renderPart2Problem();
+}
+
+function renderPart2Problem() {
+  const p = part2Problems[part2Index];
+  document.getElementById("part2-formula").innerHTML =
+    `<strong>${p.label}:</strong> ${p.formula}`;
+  document.getElementById("part2-counter").textContent =
+    `Problem ${part2Index + 1} of ${part2Problems.length}`;
+  document.getElementById("part2-feedback").textContent = "";
+  document.getElementById("part2-feedback").className = "feedback";
+  document.getElementById("reveal-btn").style.display =
+    part2Attempts[part2Index] >= 2 && !part2Solved[part2Index] ? "inline-block" : "none";
+  if (jsmeApplet) jsmeApplet.reset();
+  document.getElementById("prev-btn").disabled = part2Index === 0;
+  document.getElementById("next-btn").disabled = part2Index === part2Problems.length - 1;
+}
+
+async function getRDKit() {
+  if (RDKitReady) return RDKitReady;
+  RDKitReady = window.initRDKitModule();
+  return RDKitReady;
+}
+
+async function checkPart2() {
+  const fb = document.getElementById("part2-feedback");
+  if (!jsmeApplet) { fb.textContent = "The drawing tool hasn't finished loading yet — wait a moment and try again."; return; }
+  const userSmiles = jsmeApplet.smiles();
+  if (!userSmiles) { fb.textContent = "Draw a structure first."; return; }
+
+  let RDKit;
+  try {
+    RDKit = await getRDKit();
+  } catch (e) {
+    fb.textContent = "The structure-checking tool failed to load. Check your internet connection and reload the page.";
+    return;
+  }
+
+  const p = part2Problems[part2Index];
+  const userMol = RDKit.get_mol(userSmiles);
+  const targetMol = RDKit.get_mol(p.targetSmiles);
+  if (!userMol || !userMol.is_valid()) {
+    fb.className = "feedback incorrect-text";
+    fb.textContent = "That doesn't parse as a valid structure — check your bonds and try again.";
+    part2Attempts[part2Index]++;
+    maybeShowReveal();
+    return;
+  }
+  const userCanonical = userMol.get_smiles();
+  const targetCanonical = targetMol.get_smiles();
+  userMol.delete(); targetMol.delete();
+
+  if (userCanonical === targetCanonical) {
+    fb.className = "feedback correct-text";
+    fb.textContent = "Correct!";
+    if (!part2Solved[part2Index]) {
+      part2Solved[part2Index] = true;
+      part2CorrectCount++;
+      updateProgress();
+    }
+    document.getElementById("reveal-btn").style.display = "none";
+  } else {
+    fb.className = "feedback incorrect-text";
+    fb.textContent = "Not a match yet — check the number of carbons, the bonds between them, and any other atoms.";
+    part2Attempts[part2Index]++;
+    maybeShowReveal();
+  }
+}
+
+function maybeShowReveal() {
+  if (part2Attempts[part2Index] >= 2 && !part2Solved[part2Index]) {
+    document.getElementById("reveal-btn").style.display = "inline-block";
+  }
+}
+
+function revealPart2Answer() {
+  const p = part2Problems[part2Index];
+  if (jsmeApplet) jsmeApplet.readGenericMolecularInput(p.targetSmiles);
+  const fb = document.getElementById("part2-feedback");
+  fb.className = "feedback";
+  fb.textContent = "Here is a correct structure — study it, then move to the next problem.";
+}
+
+function updateProgress() {
+  document.getElementById("progress-summary").textContent =
+    `Part 1: ${part1CorrectCount} / ${part1Problems.length} correct  |  Part 2: ${part2CorrectCount} / ${part2Problems.length} correct`;
+}
+
+document.getElementById("check-btn").addEventListener("click", checkPart2);
+document.getElementById("clear-btn").addEventListener("click", () => { if (jsmeApplet) jsmeApplet.reset(); document.getElementById("part2-feedback").textContent = ""; });
+document.getElementById("reveal-btn").addEventListener("click", revealPart2Answer);
+document.getElementById("prev-btn").addEventListener("click", () => { if (part2Index > 0) { part2Index--; renderPart2Problem(); } });
+document.getElementById("next-btn").addEventListener("click", () => { if (part2Index < part2Problems.length - 1) { part2Index++; renderPart2Problem(); } });
+
+renderPart1();
+updateProgress();
+</script>
+</body>
+</html>
